@@ -1,0 +1,59 @@
+refimg = imread('treff1.png');
+refgray = rgb2gray(refimg);
+referenceEdges = edge(refgray, 'Canny', 0.00001);
+
+videoFile = 'trt.mp4';
+videoObj = VideoReader(videoFile);
+firstFrame = readFrame(videoObj);
+
+outputVideo = VideoWriter('output_video.avi', 'Motion JPEG AVI');
+open(outputVideo);
+
+while hasFrame(videoObj)
+    frame = readFrame(videoObj);
+    frameGray = rgb2gray(frame);
+    frameGray = imresize(frameGray, size(refgray));
+    frameEdges = edge(frameGray, 'Canny', 0.00001);
+    differenceImage = xor(referenceEdges, frameEdges);
+    matchingPercentage = (sum(differenceImage(:)) / numel(differenceImage)) * 100;
+
+
+    subplot(2, 2, 1);
+    imshow(refimg);
+    title('Reference Image');
+    subplot(2, 2, 2);
+    imshow(frame);
+    title('Current Frame');
+
+    subplot(2, 2, 3);
+    imshow(referenceEdges);
+    title('Reference Edges');
+    subplot(2, 2, 4);
+    imshow(frameEdges);
+    title('Current Frame Edges');
+
+    fprintf('Difference Percentage: %.2f%%\n', matchingPercentage);
+    if matchingPercentage < 10
+        fprintf('red light is on for 30s\n');
+        pause (30)
+    elseif matchingPercentage >= 10 && matchingPercentage < 50
+        fprintf('green light on for 30s\n');
+        pause(30)
+    elseif matchingPercentage >= 50 && matchingPercentage < 70
+        fprintf('green light on for 30s\n');
+        pause(30)
+    elseif matchingPercentage >= 70 && matchingPercentage < 90
+        fprintf('green light is on for 20s\n');
+        pause(20)
+    elseif matchingPercentage >= 90 && matchingPercentage <= 100
+        fprintf('red light is on for 60s\n');
+        pause(60)
+    else
+        fprintf('yellow light is on\n');
+    end
+
+    writeVideo(outputVideo, frame);
+end
+
+close(outputVideo);
+
